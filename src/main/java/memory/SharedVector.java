@@ -1,6 +1,7 @@
 package memory;
 
 import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class SharedVector {
 
@@ -9,46 +10,66 @@ public class SharedVector {
     private ReadWriteLock lock = new java.util.concurrent.locks.ReentrantReadWriteLock();
 
     public SharedVector(double[] vector, VectorOrientation orientation) {
-        // TODO: store vector data and its orientation
+        this.vector = vector;
+        this.orientation = orientation;
     }
 
     public double get(int index) {
-        // TODO: return element at index (read-locked)
-        return 0;
+        readLock();
+        try {
+            return vector[index];
+        } finally {
+            readUnlock();
+        }
     }
 
     public int length() {
-        // TODO: return vector length
-        return 0;
+        return vector.length;
     }
 
     public VectorOrientation getOrientation() {
-        // TODO: return vector orientation
-        return null;
+        return orientation;
     }
 
     public void writeLock() {
-        // TODO: acquire write lock
+        lock.writeLock().lock();
     }
 
     public void writeUnlock() {
-        // TODO: release write lock
+        lock.writeLock().unlock();
     }
 
     public void readLock() {
-        // TODO: acquire read lock
+        lock.readLock().lock();
     }
 
     public void readUnlock() {
-        // TODO: release read lock
+        lock.readLock().unlock();
     }
 
     public void transpose() {
-        // TODO: transpose vector
+        if (orientation == VectorOrientation.ROW_MAJOR) {
+            orientation = VectorOrientation.COLUMN_MAJOR;
+        } else {
+            orientation = VectorOrientation.ROW_MAJOR;
+        }
     }
 
     public void add(SharedVector other) {
-        // TODO: add two vectors
+        if (this.length() != other.length()) {
+            throw new IllegalArgumentException("Vectors must be of the same length to add.");
+        }
+        writeLock();
+        other.readLock();
+        SharedVector sumSharedVector = new SharedVector(new double[this.length()], this.orientation);
+        try {
+            for (int i = 0; i < vector.length; i++) {
+                sumSharedVector.vector[i] = this.vector[i] + other.get(i);
+            }
+        } finally {
+            other.readUnlock();
+            writeUnlock();
+        }
     }
 
     public void negate() {

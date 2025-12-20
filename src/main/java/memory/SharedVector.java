@@ -73,12 +73,33 @@ public class SharedVector {
     }
 
     public void negate() {
-        // TODO: negate vector
+        writeLock();
+        try {
+            for (int i = 0; i < vector.length; i++) {
+                vector[i] = -vector[i];
+            }
+        } finally {
+            writeUnlock();
+        }
     }
 
     public double dot(SharedVector other) {
-        // TODO: compute dot product (row · column)
-        return 0;
+        if (this.length() != other.length()) {
+            throw new IllegalArgumentException("Vectors must be of the same length to compute dot product.");
+        }
+        readLock();
+        other.readLock();
+        double result = 0.0;
+        try {
+            for (int i = 0; i < vector.length; i++) {
+                result += vector[i] * other.get(i);
+            }
+            return result;
+        }
+        finally{
+            readLock();
+            other.readUnlock();
+        }
     }
 
     public void vecMatMul(SharedMatrix matrix) {

@@ -9,20 +9,57 @@ public class SharedMatrix {
     }
 
     public SharedMatrix(double[][] matrix) {
-        // TODO: construct matrix as row-major SharedVectors
+        loadRowMajor(matrix);
     }
 
     public void loadRowMajor(double[][] matrix) {
-        // TODO: replace internal data with new row-major matrix
+        SharedVector[] newVectors = new SharedVector[matrix.length];
+        for (int i = 0; i < newVectors.length; i++) {
+            newVectors[i] = new SharedVector(matrix[i], VectorOrientation.ROW_MAJOR);
+        } 
+        this.vectors = newVectors;
     }
 
     public void loadColumnMajor(double[][] matrix) {
-        // TODO: replace internal data with new column-major matrix
+        SharedVector[] newVectors = new SharedVector[matrix.length];
+        for (int i = 0; i < newVectors.length; i++) {
+            newVectors[i] = new SharedVector(matrix[i], VectorOrientation.COLUMN_MAJOR);
+        } 
+        this.vectors = newVectors;
     }
 
     public double[][] readRowMajor() {
-        // TODO: return matrix contents as a row-major double[][]
-        return null;
+        SharedVector[] currentVectors = this.vectors;
+        acquireAllVectorReadLocks(currentVectors);
+        try{
+            int row = 0;
+            int col = 0;
+            if (currentVectors.length > 0) {
+                if (currentVectors[0].getOrientation() == VectorOrientation.ROW_MAJOR) {
+                    row = currentVectors.length;
+                    col = currentVectors[0].length();
+                }
+                else{
+                    row = currentVectors[0].length();
+                    col = currentVectors.length;
+                }
+            }
+            double matrix[][] = new double[row][col];
+            for (int i = 0; i < row; i++) {
+                for (int j = 0; j < col; j++) {
+                    if (currentVectors.length > 0 && currentVectors[0].getOrientation() == VectorOrientation.ROW_MAJOR){
+                        matrix[i][j] = currentVectors[i].get(j);
+                    }
+                    else {
+                        matrix[i][j] = currentVectors[j].get(i);
+                    }
+                }
+            }
+            return matrix;
+        }
+        finally{
+            releaseAllVectorReadLocks(currentVectors);
+        }
     }
 
     public SharedVector get(int index) {

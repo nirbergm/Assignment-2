@@ -5,7 +5,7 @@ public class SharedMatrix {
     private volatile SharedVector[] vectors = {}; // underlying vectors
 
     public SharedMatrix() {
-        // TODO: initialize empty matrix
+
     }
 
     public SharedMatrix(double[][] matrix) {
@@ -63,33 +63,41 @@ public class SharedMatrix {
     }
 
     public SharedVector get(int index) {
-        // TODO: return vector at index
-        return null;
+        return vectors[index];
     }
 
     public int length() {
-        // TODO: return number of stored vectors
-        return 0;
+        return vectors.length;
     }
 
     public VectorOrientation getOrientation() {
-        // TODO: return orientation
-        return null;
+        if (vectors.length > 0) {
+            return vectors[0].getOrientation();
+        }
+        return VectorOrientation.ROW_MAJOR;
     }
 
     private void acquireAllVectorReadLocks(SharedVector[] vecs) {
-        // TODO: acquire read lock for each vector
+        for (SharedVector vec : vecs) {
+            vec.readLock();
+        }
     }
 
     private void releaseAllVectorReadLocks(SharedVector[] vecs) {
-        // TODO: release read locks
+        for (SharedVector vec: vecs){
+            vec.readUnlock();
+        }
     }
 
     private void acquireAllVectorWriteLocks(SharedVector[] vecs) {
-        // TODO: acquire write lock for each vector
+        for (SharedVector vec : vecs) {
+            vec.writeLock();
+        }
     }
 
     private void releaseAllVectorWriteLocks(SharedVector[] vecs) {
-        // TODO: release write locks
+        for (SharedVector vec : vecs) {
+            vec.writeUnlock();
+        }
     }
 }

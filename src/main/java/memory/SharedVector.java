@@ -1,7 +1,6 @@
 package memory;
 
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class SharedVector {
 
@@ -18,7 +17,8 @@ public class SharedVector {
         readLock();
         try {
             return vector[index];
-        } finally {
+        } 
+        finally {
             readUnlock();
         }
     }
@@ -50,23 +50,27 @@ public class SharedVector {
     public void transpose() {
         if (orientation == VectorOrientation.ROW_MAJOR) {
             orientation = VectorOrientation.COLUMN_MAJOR;
-        } else {
+        } 
+        else {
             orientation = VectorOrientation.ROW_MAJOR;
         }
     }
 
     public void add(SharedVector other) {
         if (this.length() != other.length()) {
-            throw new IllegalArgumentException("Vectors must be of the same length to add.");
+            throw new IllegalArgumentException("Dimensions mismatch"); 
+        }
+        if (this.getOrientation() != other.getOrientation()) { 
+             throw new IllegalArgumentException("Vectors must be of the same orientation to compute.");
         }
         writeLock();
-        other.readLock();
-        SharedVector sumSharedVector = new SharedVector(new double[this.length()], this.orientation);
+        other.readLock(); 
         try {
             for (int i = 0; i < vector.length; i++) {
-                sumSharedVector.vector[i] = this.vector[i] + other.get(i);
+                vector[i] += other.get(i);
             }
-        } finally {
+        } 
+        finally {
             other.readUnlock();
             writeUnlock();
         }
@@ -78,7 +82,8 @@ public class SharedVector {
             for (int i = 0; i < vector.length; i++) {
                 vector[i] = -vector[i];
             }
-        } finally {
+        } 
+        finally {
             writeUnlock();
         }
     }
@@ -86,6 +91,9 @@ public class SharedVector {
     public double dot(SharedVector other) {
         if (this.length() != other.length()) {
             throw new IllegalArgumentException("Vectors must be of the same length to compute dot product.");
+        }
+        if (this.getOrientation() == other.getOrientation()) {
+             throw new IllegalArgumentException("Vectors must be of the same length to compute dot product.");
         }
         readLock();
         other.readLock();
@@ -96,13 +104,38 @@ public class SharedVector {
             }
             return result;
         }
-        finally{
+        finally {
             readLock();
             other.readUnlock();
         }
     }
 
     public void vecMatMul(SharedMatrix matrix) {
-        // TODO: compute row-vector × matrix
+        double[][] matData = matrix.readRowMajor();
+        int matRows = matData.length;
+        int matCols = matData[0].length;
+        if (vector.length != matRows) {
+             throw new IllegalArgumentException("Matrix's rows quantity has to be the same as vector's length");
+        }
+        double[] newVector = new double[matCols];
+        try {
+            for (int i = 0; i < matCols; i++) {
+                double sum = 0;
+                for (int j = 0; j < matRows; j++) {
+                    sum += vector[i] * matData[j][i]; 
+                }
+                vector[i] = sum;
+            }
+        }
+        finally {
+            this.readUnlock();
+        }
+        this.writeLock();
+        try {
+            vector = newVector;
+        }
+        finally {
+            this.writeUnlock();
+        }
     }
 }

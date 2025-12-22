@@ -43,4 +43,15 @@ public class SharedVectorTest {
         
         assertEquals(VectorOrientation.COLUMN_MAJOR, v.getOrientation());
     }
+
+    @Test
+    public void testDot() {
+        SharedVector v1 = new SharedVector(new double[] {1, 2, 3}, VectorOrientation.ROW_MAJOR);
+        SharedVector v2 = new SharedVector(new double[] {1, 2, 3}, VectorOrientation.COLUMN_MAJOR);
+        double dot = v1.dot(v2);
+
+        assertEquals(14, dot);
+
+        v2 = new SharedVector(new double[] {1, 2, 3}, VectorOrientation.ROW_MAJOR);     
+    }
 }

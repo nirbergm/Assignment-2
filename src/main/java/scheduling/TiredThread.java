@@ -57,6 +57,9 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {
      */
     public void newTask(Runnable task) {
        // TODO
+       if (!handoff.offer(task)) {
+            throw new IllegalStateException("Worker " + id + " cannot accept new task - queue full");   
+       }
     }
 
     /**
@@ -64,17 +67,54 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {
      * Inserts a poison pill so the worker wakes up and exits.
      */
     public void shutdown() {
-       // TODO
+        alive.set(false);
+        // מנסים להכניס גלולת רעל. אם העובד בדיוק קיבל משימה, זה בסדר, 
+        // ה-Executor יצטרך לוודא שכל המשימות נגמרו לפני ה-Shutdown.
+        // במקרה של עומס, offer יחזיר false, אבל כיוון ש-alive=false, הוא יסיים אחרי המשימה הנוכחית.
+        // כדי להיות בטוחים שהוא מתעורר מ-take(), אנחנו חייבים לדחוף משהו:
+        try {
+            handoff.put(POISON_PILL);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     @Override
     public void run() {
-       // TODO
+        try{
+            while (alive.get()) {
+                Runnable task = handoff.take();
+                long currentTime = System.nanoTime();
+                long idleDuration = currentTime - idleStartTime.get();
+                timeIdle.addAndGet(idleDuration);
+                if (task == POISON_PILL) {
+                    break;
+                }
+                busy.set(true);
+                long startWork = System.nanoTime();
+                try { 
+                    task.run();
+                }
+                catch (RuntimeException e) {
+                    // חשוב מאוד: תופסים שגיאות כדי שה-Thread לא ימות בגלל באג במשימה
+                    System.err.println("Worker " + id + " encountered an error: " + e.getMessage());
+                } 
+                finally {
+                    long workDuration = System.nanoTime() - startWork;
+                    timeUsed.addAndGet(workDuration);
+                    busy.set(false);
+                    idleStartTime.set(System.nanoTime());
+                }
+            } 
+        }
+        catch (InterruptedException e) {
+            // אם מישהו הפריע ל-Thread בזמן ההמתנה
+            Thread.currentThread().interrupt();
+        }
     }
 
     @Override
     public int compareTo(TiredThread o) {
-        // TODO
-        return 0;
+        return Double.compare(this.getFatigue(), o.getFatigue());
     }
 }

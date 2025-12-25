@@ -1,0 +1,45 @@
+{
+  "name": "Java 21 & Maven",
+  "image": "mcr.microsoft.com/devcontainers/java:1-21-bullseye",
+
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": "true",
+      "configureZshAsDefaultShell": "true"
+    },
+    "ghcr.io/devcontainers/features/java:1": {
+        "version": "none",
+        "installMaven": "true",
+        "mavenVersion": "latest"
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+        "version": "lts"
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "java.configuration.updateBuildConfiguration": "automatic",
+        "maven.terminal.useJavaHome": true,
+        "terminal.integrated.defaultProfile.linux": "zsh"
+      },
+      "extensions": [
+        "vscjava.vscode-java-pack",
+        "redhat.vscode-xml",
+        "eamodio.gitlens",
+        "humao.rest-client",
+        "SonarSource.sonarlint-vscode",
+        "editorconfig.editorconfig",
+        "vmware.vscode-spring-boot",
+        "vscjava.vscode-spring-initializr",
+        "ms-vsliveshare.vsliveshare"
+      ]
+    }
+  },
+
+  // FIX: Changed 'node -version' to 'node -v'
+  "postCreateCommand": "mvn -version && node -v",
+  "remoteUser": "vscode"
+}

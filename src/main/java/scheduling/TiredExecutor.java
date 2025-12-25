@@ -3,6 +3,7 @@ package scheduling;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class TiredExecutor {
@@ -13,23 +14,98 @@ public class TiredExecutor {
 
     public TiredExecutor(int numThreads) {
         // TODO
-        workers = null; // placeholder
+        workers = new TiredThread[numThreads];
+        Random rand = new Random();
+
+        for (int i = 0; i < numThreads; i++) {
+            // הגרלת פקטור עייפות בין 0.5 ל-1.5 כנדרש
+            double fatigueFactor = 0.5 + rand.nextDouble(); 
+            
+            workers[i] = new TiredThread(i, fatigueFactor);
+            workers[i].start(); // הפעלת ה-Thread
+            
+            // בהתחלה כולם פנויים, אז מכניסים אותם לתור
+            idleMinHeap.add(workers[i]);
+        }
     }
 
     public void submit(Runnable task) {
-        // TODO
+      // סימון שיש משימה באוויר
+        inFlight.incrementAndGet();
+
+        try {
+            // שליפת העובד הכי פחות עייף (חוסם אם אין פנויים)
+            TiredThread worker = idleMinHeap.take();
+
+            // יצירת המעטפת (Wrapper) ישירות כאן
+            Runnable wrappedTask = () -> {
+                try {
+                    task.run();
+                } finally {
+                    // 1. החזרת העובד לתור (מתמיין מחדש לפי העייפות החדשה)
+                    idleMinHeap.offer(worker);
+
+                    // 2. עדכון מונה משימות ובדיקת סיום
+                    if (inFlight.decrementAndGet() == 0) {
+                        // שימוש ב-this במקום ב-lock חיצוני
+                        synchronized (this) {
+                            this.notifyAll();
+                        }
+                    }
+                }
+            };
+
+            // שליחה לביצוע
+            worker.newTask(wrappedTask);
+
+        } catch (InterruptedException e) {
+            inFlight.decrementAndGet(); // תיקון המונה במקרה של כישלון
+            Thread.currentThread().interrupt();
+        }
     }
 
     public void submitAll(Iterable<Runnable> tasks) {
         // TODO: submit tasks one by one and wait until all finish
+        // 1. שליחת כל המשימות
+        for (Runnable task : tasks) {
+            submit(task);
+        }
+
+        // 2. המתנה עד שהכל יסתיים (Barrier)
+        // אנחנו נועלים את 'this' כי זה האובייקט שעשינו עליו notifyAll למעלה
+        synchronized (this) {
+            while (inFlight.get() > 0) {
+                try {
+                    this.wait();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+        }
+
     }
 
     public void shutdown() throws InterruptedException {
-        // TODO
+        for (TiredThread worker : workers) {
+            worker.shutdown();
+        }
+        // המתנה שהם באמת ימותו
+        for (TiredThread worker : workers) {
+            worker.join();
+        }
     }
 
     public synchronized String getWorkerReport() {
         // TODO: return readable statistics for each worker
-        return null;
+        StringBuilder sb = new StringBuilder();
+        sb.append("Worker Report:\n");
+        for (TiredThread worker : workers) {
+            sb.append("Worker ").append(worker.getWorkerId()).append(": ")
+              .append("Fatigue=").append(String.format("%.2f", worker.getFatigue())).append(", ")
+              .append("TimeUsed=").append(worker.getTimeUsed()).append(", ")
+              .append("TimeIdle=").append(worker.getTimeIdle()).append("\n");
+        }
+        return sb.toString();
     }
 }

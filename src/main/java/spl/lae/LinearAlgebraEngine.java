@@ -32,6 +32,28 @@ public class LinearAlgebraEngine {
     public void loadAndCompute(ComputationNode node) {
         // TODO: load operand matrices
         // TODO: create compute tasks & submit tasks to executor
+        List<ComputationNode> children = node.getChildren();
+        leftMatrix.loadRowMajor(children.getFirst().getMatrix());
+        if (children.size() > 1) {
+            rightMatrix.loadRowMajor(children.getLast().getMatrix());
+        }
+        List<Runnable> tasks = null;
+        switch (node.getNodeType()) {
+            case ADD:
+                tasks = createAddTasks();
+                break;
+            case MULTIPLY:
+                tasks = createMultiplyTasks();
+                break;
+            case NEGATE:
+                tasks = createNegateTasks();
+                break;
+            case TRANSPOSE:
+                tasks = createTransposeTasks();
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown operation");
+        }
     }
 
     public List<Runnable> createAddTasks() {

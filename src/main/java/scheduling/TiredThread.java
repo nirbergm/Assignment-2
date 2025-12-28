@@ -68,10 +68,6 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {
      */
     public void shutdown() {
         alive.set(false);
-        // מנסים להכניס גלולת רעל. אם העובד בדיוק קיבל משימה, זה בסדר, 
-        // ה-Executor יצטרך לוודא שכל המשימות נגמרו לפני ה-Shutdown.
-        // במקרה של עומס, offer יחזיר false, אבל כיוון ש-alive=false, הוא יסיים אחרי המשימה הנוכחית.
-        // כדי להיות בטוחים שהוא מתעורר מ-take(), אנחנו חייבים לדחוף משהו:
         try {
             handoff.put(POISON_PILL);
         } catch (InterruptedException e) {
@@ -96,7 +92,7 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {
                     task.run();
                 }
                 catch (RuntimeException e) {
-                    // חשוב מאוד: תופסים שגיאות כדי שה-Thread לא ימות בגלל באג במשימה
+                    // : תופסים שגיאות כדי שה-Thread לא ימות בגלל באג במשימה
                     System.err.println("Worker " + id + " encountered an error: " + e.getMessage());
                 } 
                 finally {

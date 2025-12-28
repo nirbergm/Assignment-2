@@ -14,11 +14,19 @@ public class LinearAlgebraEngine {
 
     public LinearAlgebraEngine(int numThreads) {
         // TODO: create executor with given thread count
+        executor = new TiredExecutor(numThreads);
     }
 
     public ComputationNode run(ComputationNode computationRoot) {
         // TODO: resolve computation tree step by step until final matrix is produced
-        return null;
+        while (computationRoot.getNodeType() != ComputationNodeType.MATRIX) {
+            ComputationNode cn = computationRoot.findResolvable();
+            if (cn == null) {
+                break;
+            }
+            loadAndCompute(cn);
+        }
+        return computationRoot;
     }
 
     public void loadAndCompute(ComputationNode node) {
@@ -48,6 +56,6 @@ public class LinearAlgebraEngine {
 
     public String getWorkerReport() {
         // TODO: return summary of worker activity
-        return null;
+        return executor.getWorkerReport();
     }
 }

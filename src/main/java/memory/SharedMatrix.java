@@ -21,10 +21,30 @@ public class SharedMatrix {
     }
 
     public void loadColumnMajor(double[][] matrix) {
-        SharedVector[] newVectors = new SharedVector[matrix.length];
-        for (int i = 0; i < newVectors.length; i++) {
-            newVectors[i] = new SharedVector(matrix[i], VectorOrientation.COLUMN_MAJOR);
+       if (matrix == null || matrix.length == 0) {
+            this.vectors = new SharedVector[0];
+            return;
+        }
+
+        int rows = matrix.length;
+        int cols = matrix[0].length;
+
+        // שים לב: המערך החדש הוא בגודל מספר העמודות!
+        SharedVector[] newVectors = new SharedVector[cols];
+
+        for (int j = 0; j < cols; j++) {
+            // יוצרים מערך חדש עבור כל עמודה
+            double[] columnData = new double[rows];
+            
+            // מעתיקים את הנתונים: רצים על השורות (i) ולוקחים את האיבר ה-j
+            for (int i = 0; i < rows; i++) {
+                columnData[i] = matrix[i][j];
+            }
+            
+            // עכשיו הוקטור הזה באמת מייצג עמודה
+            newVectors[j] = new SharedVector(columnData, VectorOrientation.COLUMN_MAJOR);
         } 
+        
         this.vectors = newVectors;
     }
 

@@ -70,6 +70,7 @@ public class LinearAlgebraEngine {
             tasks.add(() -> {
                 SharedVector v1 = leftMatrix.get(rowIndex);
                 SharedVector v2 = rightMatrix.get(rowIndex);
+                v1.add(v2);
             });
         }
         return tasks;

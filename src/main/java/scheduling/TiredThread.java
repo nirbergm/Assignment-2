@@ -70,8 +70,7 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {
         alive.set(false);
         try {
             handoff.put(POISON_PILL);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+        } catch (Exception e) {
         }
     }
 
@@ -103,9 +102,7 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {
                 }
             } 
         }
-        catch (InterruptedException e) {
-            // אם מישהו הפריע ל-Thread בזמן ההמתנה
-            Thread.currentThread().interrupt();
+        catch (Exception e) {
         }
     }
 

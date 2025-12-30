@@ -57,9 +57,8 @@ public class TiredExecutor {
             // שליחה לביצוע
             worker.newTask(wrappedTask);
 
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
             inFlight.decrementAndGet(); // תיקון המונה במקרה של כישלון
-            Thread.currentThread().interrupt();
         }
     }
 
@@ -76,8 +75,7 @@ public class TiredExecutor {
             while (inFlight.get() > 0) {
                 try {
                     this.wait();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
+                } catch (Exception e) {
                     break;
                 }
             }

@@ -53,7 +53,15 @@ public class LinearAlgebraEngine {
                 break;
             default:
                 throw new IllegalArgumentException("Unknown operation");
+            try {
+                executor.submitAll(tasks);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("Computation interrupted", e);
+            }
+            
         }
+        
     }
 
     public List<Runnable> createAddTasks() {
